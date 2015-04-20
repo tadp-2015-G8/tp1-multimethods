@@ -50,7 +50,11 @@ describe 'test PartialBlock' do
     moduleNameBlock = PartialBlock.new([Module]) do |mod|
       mod.name
     end
+    expect(moduleNameBlock.call(Math)).to eq("Math")
+    expect(moduleNameBlock.matches(Kernel)).to eq(true)
+    expect(moduleNameBlock.matches(Object.new)).to eq(false)
   end
+
 
   it 'Multimetodos' do
     class A
@@ -104,7 +108,7 @@ describe 'test PartialBlock' do
       partial_def :sumar, [Array, Array] do |arr1, arr2|
         arr1.inject(:+) + arr2.inject(:+)
       end
-      
+
       partial_def :sumar, [String] do |str|
         str
       end
