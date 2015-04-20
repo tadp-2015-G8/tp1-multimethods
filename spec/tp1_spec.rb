@@ -46,6 +46,12 @@ describe 'test PartialBlock' do
     expect(pi.matches()).to eq(true)
   end
 
+  it 'PartialBlock con modulos' do
+    moduleNameBlock = PartialBlock.new([Module]) do |mod|
+      mod.name
+    end
+  end
+
   it 'Multimetodos' do
     class A
       partial_def :concat, [Object, Object] do |o1, o2|
@@ -88,4 +94,31 @@ describe 'test PartialBlock' do
     b.var = 123
     expect(b.var).to eq(123)
   end
+
+  it 'Uso de Multimetodos definidos en un modulo' do
+    module M1
+      partial_def :sumar, [Integer, Integer] do |x, y|
+        x + y
+      end
+
+      partial_def :sumar, [Array, Array] do |arr1, arr2|
+        arr1.inject(:+) + arr2.inject(:+)
+      end
+      
+      partial_def :sumar, [String] do |str|
+        str
+      end
+    end
+
+    class A
+      include M1
+    end
+
+    obj1= A.new
+
+    expect(obj1.send(:sumar,[1,2,3],[1,2,3])).to eq(12)
+    expect(obj1.send(:sumar,1,2)).to eq(3)
+    expect(obj1.send(:sumar,"hola")).to eq("hola")
+  end
+
 end
