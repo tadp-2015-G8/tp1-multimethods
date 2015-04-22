@@ -230,6 +230,46 @@ end
 
   end
 
+  it 'multimetodo a un unico objeto cuya clase ya tiene multimetodos ' do
+    class Soldado
+      attr_accessor :nombre
+      def initialize(nombre)
+        @nombre = nombre
+      end
+    end
+
+    class Tanque
+      attr_accessor :nombre
+      def initialize(nombre)
+        @nombre = nombre
+      end
+
+      partial_def :tocar_bocina_a, [Object] do |obj|
+        "Honk Object"
+      end
+
+      partial_def :explotar, [] do
+        "#{@nombre} exploto"
+      end
+    end
+
+    tanque_modificado = Tanque.new('Tanque1')
+    tanque_modificado.partial_def :tocar_bocina_a, [Soldado] do |soldado|
+      "Honk honk! #{soldado.nombre}"
+    end
+
+    tanque_modificado.partial_def :tocar_bocina_a, [Tanque] do |tanque|
+      "Hooooooonk!"
+    end
+
+    expect(tanque_modificado.tocar_bocina_a(Soldado.new("pepe"))).to eq("Honk honk! pepe")
+    expect(tanque_modificado.tocar_bocina_a(Tanque.new("pepe"))).to eq("Hooooooonk!")
+    expect {Tanque.new("Tanque2").tocar_bocina( Tanque.new("Tanque3")) }.to raise_error(NoMethodError)
+    expect(tanque_modificado.tocar_bocina_a(Object.new)).to eq("Honk Object")
+    expect(tanque_modificado.explotar).to eq("Tanque1 exploto")
+
+  end
+
   it 'Uso de Multimetodos definidos en un modulo' do
     module M1
       partial_def :sumar, [Integer, Integer] do |x, y|
