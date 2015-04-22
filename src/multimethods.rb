@@ -21,11 +21,10 @@ module Multimethods
     partial_blocks[nuevo_metodo] ||= {}
     partial_blocks[nuevo_metodo][tipos] = PartialBlock.new(tipos, &block)
 
-    unless object.method_defined?(nuevo_metodo)
-      object.send(:define_method, nuevo_metodo)  do |*args|
-        get_metodo_a_ejecutar(nuevo_metodo, *args).call_with_object(self, *args)
-      end
+    object.send(:define_method, nuevo_metodo)  do |*args|
+      get_metodo_a_ejecutar(nuevo_metodo, *args).call_with_object(self, *args)
     end
+
   end
 
   private
