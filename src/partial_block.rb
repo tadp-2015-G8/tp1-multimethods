@@ -1,5 +1,4 @@
 class PartialBlock
-  attr_accessor :block
   def initialize(tipos, &block)
     raise ArgumentError, "Cantidad de parametros invalida" if tipos and tipos.length != block.arity
     @tipos = tipos

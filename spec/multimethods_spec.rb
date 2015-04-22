@@ -296,4 +296,39 @@ end
     expect(obj1.send(:sumar,"hola")).to eq("hola")
   end
 
+  it 'Multimetodos con herencia' do
+    class A
+      partial_def :concat, [Array] do |arg|
+        arg.join
+      end
+    end
+
+    class B < A
+      partial_def :concat, [Array] do |arg|
+        arg.size
+      end
+
+      partial_def :sumar, [Integer, Integer] do |n1 ,n2|
+        n1 + n2
+      end
+    end
+
+    class C < B
+      def concat(arg)
+        arg.join(".")
+      end
+    end
+
+    class D < C
+      partial_def :concat, [Array] do |arg|
+       arg.join(",")
+      end
+    end
+
+    expect(A.new.concat(["a", "b", "c"])).to eq("abc")
+    expect(B.new.concat(["a", "b", "c"])).to eq(3)
+    expect(C.new.concat(["a", "b", "c"])).to eq("a.b.c")
+    expect(D.new.concat(["a", "b", "c"])).to eq("a,b,c")
+  end
+
 end
