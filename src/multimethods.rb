@@ -58,8 +58,16 @@ module Multimethods
     partial_blocks_total
   end
 
+  def respond_to_multimethod?(multimetodo,*args)
+    partial_blocks_total[multimetodo].keys.include? *args
+  end
+
 end
+
+
+
 
 class Object
   include Multimethods
+  
 end

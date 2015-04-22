@@ -289,8 +289,16 @@ end
       include M1
     end
 
-    obj1= A.new
+    class B < A
+    end
 
+    obj1= A.new
+    obj2 = B.new
+
+    expect(obj1.send(:respond_to_multimethod?,:sumar,[Array,Array])).to eq(true)
+    expect(obj1.send(:respond_to_multimethod?,:sumar,[Integer,Integer])).to eq(true)
+    expect(obj1.send(:respond_to_multimethod?,:sumar,[String])).to eq(true)
+    expect(obj1.send(:respond_to_multimethod?,:sumar,[Float,Float])).to eq(false)
     expect(obj1.send(:sumar,[1,2,3],[1,2,3])).to eq(12)
     expect(obj1.send(:sumar,1,2)).to eq(3)
     expect(obj1.send(:sumar,"hola")).to eq("hola")
