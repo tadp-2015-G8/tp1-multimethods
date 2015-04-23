@@ -27,12 +27,12 @@ module Multimethods
 
   end
 
-  def respond_to_multimethod?(multimetodo, args = [])
-    !partial_blocks_total[multimetodo].nil? and (args.empty? or !partial_blocks_total[multimetodo].values.find_all { |block| block.matches_with_class(*args) }.empty?)
+  def respond_to_multimethod?(multimetodo, args = nil)
+    !partial_blocks_total[multimetodo].nil? and (args.nil? or !partial_blocks_total[multimetodo].values.find_all { |block| block.matches_with_class(*args) }.empty?)
   end
 
-  def respond_to?(metodo, include_all = false, args = [])
-    super(metodo, include_all) and (args.empty? or respond_to_multimethod?(metodo, args))
+  def respond_to?(metodo, include_all = false, args = nil)
+    super(metodo, include_all) and (args.nil? or respond_to_multimethod?(metodo, args))
   end
 
   private

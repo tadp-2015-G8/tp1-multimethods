@@ -292,13 +292,7 @@ end
     class B < A
     end
 
-    obj1 = A.new
-    obj2 = B.new
-
-    expect(obj1.respond_to_multimethod? :sumar, [Array, Array]).to eq(true)
-    expect(obj1.respond_to_multimethod? :sumar, [Integer, Integer]).to eq(true)
-    expect(obj1.respond_to_multimethod? :sumar, [String]).to eq(true)
-    expect(obj1.respond_to_multimethod? :sumar, [Float, Float]).to eq(false)
+    obj1 = B.new
 
     expect(obj1.send(:sumar,[1,2,3],[1,2,3])).to eq(12)
     expect(obj1.send(:sumar,1,2)).to eq(3)
@@ -340,10 +334,30 @@ end
     expect(D.new.concat(["a", "b", "c"])).to eq("a,b,c")
   end
 
-  it 'Respond_to?' do
-    class A
+  it 'respond_to? y respond_to_multimethod?' do
+    module M1
+      partial_def :vacio, [] do
+        nil
+      end
+      
+      partial_def :sumar, [Integer, Integer] do |x, y|
+        x + y
+      end
+
+      partial_def :sumar, [Array, Array] do |arr1, arr2|
+        arr1.inject(:+) + arr2.inject(:+)
+      end
+
       partial_def :concat, [String, String] do |s1, s2|
         s1 + s2
+      end
+    end
+
+    class A
+      include M1
+
+      partial_def :sumar, [String] do |str|
+        str
       end
 
       partial_def :concat, [String, Integer] do |s1, n|
@@ -359,11 +373,22 @@ end
       end
     end
 
-    expect(A.new.respond_to?(:concat)).to eq(true) # true, define el método como multimethod
-    expect(A.new.respond_to?(:to_s)).to eq(true) # true, define el método normalmente
-    expect(A.new.respond_to?(:concat, false, [String, String])).to eq(true) # true, los tipos coinciden
-    expect(A.new.respond_to?(:concat, false, [Integer, A])).to eq(true) # true, matchea con [Object, Object]
-    expect(A.new.respond_to?(:to_s, false , [String])).to eq(false) # false, no es un multimethod
-    expect(A.new.respond_to?(:concat, false, [String, String, String])).to eq(false) # false, los tipos no coinciden
+    object = A.new
+
+    expect(object.respond_to_multimethod? :vacio, []).to eq(true)
+    expect(object.respond_to_multimethod? :concat, []).to eq(false)
+    expect(object.respond_to_multimethod? :sumar, [Array, Array]).to eq(true)
+    expect(object.respond_to_multimethod? :sumar, [Integer, Integer]).to eq(true)
+    expect(object.respond_to_multimethod? :sumar, [String]).to eq(true)
+    expect(object.respond_to_multimethod? :sumar, [Float, Float]).to eq(false)
+
+    expect(object.respond_to? :concat).to eq(true) # true, define el método como multimethod
+    expect(object.respond_to? :to_s).to eq(true) # true, define el método normalmente
+    expect(object.respond_to? :concat, false, [String, String]).to eq(true) # true, los tipos coinciden
+    expect(object.respond_to? :concat, false, [Integer, A]).to eq(true) # true, matchea con [Object, Object]
+    expect(object.respond_to? :to_s, false , [String]).to eq(false) # false, no es un multimethod
+    expect(object.respond_to? :concat, false, [String, String, String]).to eq(false) # false, los tipos no coinciden
+    expect(object.respond_to? :concat, false, []).to eq(false)
+    expect(object.respond_to? :vacio, false, []).to eq(true)
   end
 end
