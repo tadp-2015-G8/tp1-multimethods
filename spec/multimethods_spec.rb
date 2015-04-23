@@ -292,13 +292,14 @@ end
     class B < A
     end
 
-    obj1= A.new
+    obj1 = A.new
     obj2 = B.new
 
-    expect(obj1.send(:respond_to_multimethod?,:sumar,[Array,Array])).to eq(true)
-    expect(obj1.send(:respond_to_multimethod?,:sumar,[Integer,Integer])).to eq(true)
-    expect(obj1.send(:respond_to_multimethod?,:sumar,[String])).to eq(true)
-    expect(obj1.send(:respond_to_multimethod?,:sumar,[Float,Float])).to eq(false)
+    expect(obj1.respond_to_multimethod? :sumar, [Array, Array]).to eq(true)
+    expect(obj1.respond_to_multimethod? :sumar, [Integer, Integer]).to eq(true)
+    expect(obj1.respond_to_multimethod? :sumar, [String]).to eq(true)
+    expect(obj1.respond_to_multimethod? :sumar, [Float, Float]).to eq(false)
+
     expect(obj1.send(:sumar,[1,2,3],[1,2,3])).to eq(12)
     expect(obj1.send(:sumar,1,2)).to eq(3)
     expect(obj1.send(:sumar,"hola")).to eq("hola")
@@ -339,4 +340,30 @@ end
     expect(D.new.concat(["a", "b", "c"])).to eq("a,b,c")
   end
 
+  it 'Respond_to?' do
+    class A
+      partial_def :concat, [String, String] do |s1, s2|
+        s1 + s2
+      end
+
+      partial_def :concat, [String, Integer] do |s1, n|
+        s1 * n
+      end
+
+      partial_def :concat, [Array] do |a|
+        a.join
+      end
+
+      partial_def :concat, [Object, Object] do |o1, o2|
+        "Objetos concatenados"
+      end
+    end
+
+    expect(A.new.respond_to?(:concat)).to eq(true) # true, define el método como multimethod
+    expect(A.new.respond_to?(:to_s)).to eq(true) # true, define el método normalmente
+    expect(A.new.respond_to?(:concat, false, [String, String])).to eq(true) # true, los tipos coinciden
+    expect(A.new.respond_to?(:concat, false, [Integer, A])).to eq(true) # true, matchea con [Object, Object]
+    expect(A.new.respond_to?(:to_s, false , [String])).to eq(false) # false, no es un multimethod
+    expect(A.new.respond_to?(:concat, false, [String, String, String])).to eq(false) # false, los tipos no coinciden
+  end
 end

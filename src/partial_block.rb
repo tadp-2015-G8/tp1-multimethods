@@ -7,9 +7,14 @@ class PartialBlock < Proc
   end
 
   def matches(*args)
+    args.map! { |arg| arg.class}
+    matches_with_class(*args)
+  end
+
+  def matches_with_class(*args)
     return false if args.length != @tipos.length
     (args.zip(@tipos)).each do |param, tipo|
-      unless param.is_a? tipo
+      unless param.ancestors.include? tipo
         return false
       end
     end

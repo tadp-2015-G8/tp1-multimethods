@@ -21,10 +21,18 @@ module Multimethods
     partial_blocks[nuevo_metodo] ||= {}
     partial_blocks[nuevo_metodo][tipos] = PartialBlock.new(tipos, &block)
 
-    object.send(:define_method, nuevo_metodo)  do |*args|
+    object.send(:define_method, nuevo_metodo) do |*args|
       self.instance_exec(*args, &get_metodo_a_ejecutar(nuevo_metodo, *args))
     end
 
+  end
+
+  def respond_to_multimethod?(multimetodo, args = [])
+    !partial_blocks_total[multimetodo].nil? and (args.empty? or !partial_blocks_total[multimetodo].values.find_all { |block| block.matches_with_class(*args) }.empty?)
+  end
+
+  def respond_to?(metodo, include_all = false, args = [])
+    super(metodo, include_all) and (args.empty? or respond_to_multimethod?(metodo, args))
   end
 
   private
@@ -57,11 +65,6 @@ module Multimethods
 
     partial_blocks_total
   end
-
-  def respond_to_multimethod?(multimetodo,*args)
-    partial_blocks_total[multimetodo].keys.include? *args
-  end
-
 end
 
 

@@ -20,6 +20,16 @@ describe 'test PartialBlock' do
     expect(helloBlock.matches("a", "b")).to eq(false)
   end
 
+  it 'PartialBlock matches_with_class' do
+    helloBlock = PartialBlock.new([String]) do |who|
+      "Hello #{who}"
+    end
+
+    expect(helloBlock.matches_with_class(String)).to eq(true)
+    expect(helloBlock.matches_with_class(Integer)).to eq(false)
+    expect(helloBlock.matches_with_class(String, String)).to eq(false)
+  end
+
   it 'PartialBlock call' do
     helloBlock = PartialBlock.new([String]) do |who|
       "Hello #{who}"
