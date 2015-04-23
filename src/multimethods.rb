@@ -22,7 +22,7 @@ module Multimethods
     partial_blocks[nuevo_metodo][tipos] = PartialBlock.new(tipos, &block)
 
     object.send(:define_method, nuevo_metodo)  do |*args|
-      get_metodo_a_ejecutar(nuevo_metodo, *args).call_with_object(self, *args)
+      self.instance_exec(*args, &get_metodo_a_ejecutar(nuevo_metodo, *args))
     end
 
   end
@@ -65,9 +65,6 @@ module Multimethods
 end
 
 
-
-
 class Object
   include Multimethods
-  
 end

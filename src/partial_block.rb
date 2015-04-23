@@ -1,4 +1,5 @@
-class PartialBlock
+class PartialBlock < Proc
+
   def initialize(tipos, &block)
     raise ArgumentError, "Cantidad de parametros invalida" if tipos and tipos.length != block.arity
     @tipos = tipos
@@ -15,16 +16,12 @@ class PartialBlock
     return true
   end
 
-  def call_with_object(object, *args)
+  def call(*args)
     unless matches(*args)
       raise ArgumentError, "Argumentos invalidos"
     end
 
-    object.instance_exec(*args, &@block)
-  end
-
-  def call(*args)
-    call_with_object(self, *args)
+    @block.call(*args)
   end
 
   def distancia(*args)
