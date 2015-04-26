@@ -28,7 +28,7 @@ module Multimethods
   end
 
   def respond_to_multimethod?(multimetodo, args = nil)
-    !partial_blocks_total[multimetodo].nil? and (args.nil? or !partial_blocks_total[multimetodo].values.find_all { |block| block.matches_with_class(*args) }.empty?)
+    !partial_blocks_total(multimetodo).nil? and (args.nil? or !partial_blocks_total(multimetodo).find_all { |block| block.matches_with_class(*args) }.empty?)
   end
 
   def respond_to?(metodo, include_all = false, args = nil)
@@ -40,7 +40,7 @@ module Multimethods
   # Lookup del metodo. Elige que metodo (block) que se tiene que ejecutar
   # self aca es siempre una instancia, pero no se sabe si definio un multimetodo de instancia o de clase/modulo.
   def get_metodo_a_ejecutar(method, *args)
-    candidatos = partial_blocks_total[method].values.find_all { |block| block.matches(*args) }
+    candidatos = partial_blocks_total(method).find_all { |block| block.matches(*args) }
 
     if candidatos.empty?
       raise NoMethodError, "#{method} no esta definido para los argumentos recibidos"
@@ -48,21 +48,20 @@ module Multimethods
     candidatos.min_by {|block| block.distancia(*args)}
   end
 
-  # Devuelve un hash con todos los multimetodos que debe entender por sus superclases y modulos.
-  def partial_blocks_total
-    partial_blocks_total = Hash.new
+  # Devuelve una lista con todos los bloques que debe entender por sus superclases y modulos para el metodo pedido.
+  def partial_blocks_total(method)
+    partial_blocks_total = []
 
     ancestros = [self] + self.class.ancestors
     ancestros.each do |ancestro|
-      ancestro.partial_blocks.each do |multimethod, hash_de_tipos|
-        partial_blocks_total[multimethod] ||= Hash.new
+      #si se encuentra un ancestro con definicion normal se corta la busqueda.
+      (ancestro.is_a? Module and ancestro.instance_methods(false).include? method and not ancestro.multimethods.include? method)? break :
 
-        hash_de_tipos.each do |tipo, partial_block|
-          partial_blocks_total[multimethod][tipo] ||= partial_block
-        end
+      ancestro.partial_blocks.find_all { |bloque| bloque[0] == method }.each do |_, hash_tipos|
+          partial_blocks_total += hash_tipos.values
       end
-    end
 
+    end
     partial_blocks_total
   end
 end
@@ -71,3 +70,4 @@ end
 class Object
   include Multimethods
 end
+
