@@ -408,16 +408,40 @@ end
     end
 
     class C < B
-      partial_def :m, [Object] do |o|
-        p 'C>m and Object'
+      partial_def :m, [Integer] do |i|
+        i * 2
       end
     end
 
-    #La implementacion de A es la mas especifica, pero B la sobreescribe con un metodo normal.
+    #La implementacion de A es apropiada, pero B la sobreescribe con un metodo normal.
     #Por lo tanto C termina su propia implementacion de m (corta la busqueda en B)
-    c = C.new
-    expect(c.m("hola")).to eq("C>m and Object")
+    expect(A.new.m("Hola")).to eq("Hola")
+    expect{C.new.m("Hola")}.to raise_error(NoMethodError)
+  end
 
+  it 'Pisar metodos en la misma clase' do
+    class A
+      partial_def :prueba, [String] do |s|
+        s.length
+      end
+    end
+
+    expect(A.new.prueba("Hola")).to eq(4)
+
+    class A
+      def prueba(p)
+        p * 2
+      end
+    end
+
+    class A
+      partial_def :prueba, [Integer] do |i|
+        i
+      end
+    end
+
+    expect(A.new.prueba(4)).to eq(4)
+    expect{A.new.prueba("Hola")}.to raise_error(NoMethodError)
   end
 
 end
