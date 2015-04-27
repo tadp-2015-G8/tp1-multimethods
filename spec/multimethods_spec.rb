@@ -329,10 +329,10 @@ end
       end
     end
 
-    #expect(A.new.concat(["a", "b", "c"])).to eq("abc")
+    expect(A.new.concat(["a", "b", "c"])).to eq("abc")
     expect(B.new.concat(["a", "b", "c"])).to eq(3)
-    #expect(C.new.concat(["a", "b", "c"])).to eq("a.b.c")
-    #expect(D.new.concat(["a", "b", "c"])).to eq("a,b,c")
+    expect(C.new.concat(["a", "b", "c"])).to eq("a.b.c")
+    expect(D.new.concat(["a", "b", "c"])).to eq("a,b,c")
   end
 
   it 'respond_to? y respond_to_multimethod?' do
