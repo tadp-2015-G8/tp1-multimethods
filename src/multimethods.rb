@@ -2,10 +2,6 @@ require_relative '../src/partial_block'
 
 module Multimethods
 
-  def initialize
-    @@is_partial_method = false
-  end
-
   # variable que guarda los blocks de cada multimethod.
   def partial_blocks
     @partial_blocks ||= {}
@@ -79,14 +75,6 @@ end
 
 class Object
   include Multimethods
-
-  #Borra los multimetodos definidos antes de una definicion normal en una misma clase
-  def self.method_added(method_name)
-    @@is_partial_method ||= false
-    if not @@is_partial_method and not multimethods.empty?
-      partial_blocks.delete(method_name)
-    end
-  end
 end
 
 
