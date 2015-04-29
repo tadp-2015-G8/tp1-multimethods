@@ -441,9 +441,7 @@ end
     end
 
     expect(A.new.prueba(4)).to eq(4)
-
-    #Un multimethod que pisa un método común por lo tanto está bien que se habiliten los multimethods.
-    expect(A.new.prueba("Hola")).to eq(4)
+    expect{A.new.prueba("Hola")}.to raise_error(NoMethodError)
   end
 
 end
