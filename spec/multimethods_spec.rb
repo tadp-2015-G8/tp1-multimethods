@@ -441,7 +441,7 @@ end
     end
 
     expect(A.new.prueba(4)).to eq(4)
-    expect{A.new.prueba("Hola")}.to raise_error(NoMethodError)
+    expect(A.new.prueba("Hola")).to eq(4)
   end
 
 end
