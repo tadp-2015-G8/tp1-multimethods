@@ -8,7 +8,7 @@ module Multimethods
   end
 
   def multimethods
-    partial_blocks.keys
+    partial_blocks_total.keys
   end
 
   def multimethod(method)
@@ -16,7 +16,6 @@ module Multimethods
   end
 
   def partial_def(nuevo_metodo, tipos, &block)
-    @@is_partial_method = true
     object = (self.is_a? Module)? self : self.singleton_class
 
     partial_blocks[nuevo_metodo] ||= {}
@@ -25,23 +24,40 @@ module Multimethods
     object.send(:define_method, nuevo_metodo) do |*args|
       self.instance_exec(*args, &get_metodo_a_ejecutar(nuevo_metodo, *args))
     end
+  end
 
+  def base
+    object_singleton = self.clone
+
+    multimethods.each do |multimetodo|
+      object_singleton.define_singleton_method(multimetodo) do |tipos, *args|
+        bloque = partial_blocks_total[multimetodo][tipos]
+
+        if bloque.nil?
+          raise NoMethodError, "#{multimetodo} no esta definido para los argumentos recibidos"
+        end
+
+        self.instance_exec(*args, &bloque)
+      end
+    end
+
+    object_singleton
   end
 
   def respond_to_multimethod?(multimetodo, args = nil)
-    !partial_blocks_total(multimetodo).nil? and (args.nil? or !partial_blocks_total(multimetodo).values.find_all { |block| block.matches_with_class(*args) }.empty?)
+    multimethods.include?(multimetodo) and (args.nil? or !partial_blocks_total[multimetodo].values.find_all { |block| block.matches_with_class(*args) }.empty?)
   end
 
   def respond_to?(metodo, include_all = false, args = nil)
     super(metodo, include_all) and (args.nil? or respond_to_multimethod?(metodo, args))
   end
 
-  private
+#  private
 
   # Lookup del metodo. Elige que metodo (block) que se tiene que ejecutar
   # self aca es siempre una instancia, pero no se sabe si definio un multimetodo de instancia o de clase/modulo.
   def get_metodo_a_ejecutar(method, *args)
-    candidatos = partial_blocks_total(method).values.find_all { |block| block.matches(*args) }
+    candidatos = partial_blocks_total[method].values.find_all { |block| block.matches(*args) }
 
     if candidatos.empty?
       raise NoMethodError, "#{method} no esta definido para los argumentos recibidos"
@@ -49,28 +65,28 @@ module Multimethods
     candidatos.min_by {|block| block.distancia(*args)}
   end
 
-  # Devuelve un hash con todos los tipos y bloques que debe entender por sus superclases y modulos para el metodo pedido.
-  def partial_blocks_total(method)
+  # Devuelve un hash con todos los multimetodos, tipos y bloques que debe entender por sus superclases y modulos para el metodo pedido.
+  def partial_blocks_total
     partial_blocks_total = {}
 
     ancestros = [self] + self.class.ancestors
-    ancestros.each do |ancestro|
-      #si se encuentra un ancestro con definicion normal se corta la busqueda.
-      (ancestro.is_a? Module and ancestro.instance_methods(false).include? method and not ancestro.multimethods.include? method)? break :
-
-      ancestro.partial_blocks.find_all { |bloque| bloque[0] == method }.each do |_, hash_tipos|
-        hash_tipos.each do |lista_tipos, block|
-          unless  partial_blocks_total[lista_tipos] != nil
-            partial_blocks_total[lista_tipos] = block
-          end
+    ancestros.reverse.each do |ancestro|
+      partial_blocks_total.keys.each do |multimetodo|
+        if ancestro.is_a? Module and ancestro.instance_methods(false).include? multimetodo and not ancestro.partial_blocks.keys.include? multimetodo
+          partial_blocks_total.delete(multimetodo)
         end
       end
 
+      ancestro.partial_blocks.each do |multimetodo, hash_tipos|
+        hash_tipos.each do |lista_tipos, block|
+          partial_blocks_total[multimetodo] ||= {}
+          partial_blocks_total[multimetodo][lista_tipos] = block
+        end
+      end
     end
+
     partial_blocks_total
   end
-
-
 end
 
 class Object
