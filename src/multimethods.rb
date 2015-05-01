@@ -2,19 +2,28 @@ require_relative '../src/partial_block'
 
 module Multimethods
 
+  # devuelve una nueva clase clonada donde se van a definir los metodos base.
+  def base_class
+    clase = (self.is_a? Module)? self : self.class
+    @base_class ||= clase.clone
+    @base_class.send(:attr_accessor, :instancia)
+    @base_class
+  end
+
   # variable que guarda los blocks de cada multimethod.
   def partial_blocks
     @partial_blocks ||= {}
   end
 
-  def multimethods
-    partial_blocks_total.keys
+  def multimethods(regular=true)
+    regular ? partial_blocks_total.keys : partial_blocks.keys
   end
 
   def multimethod(method)
     (multimethods.include? method)? instance_method(method) : (raise NameError, "Multimetodo #{method} no definido")
   end
 
+  # Define un multimetodo y el metodo en base.
   def partial_def(nuevo_metodo, tipos, &block)
     object = (self.is_a? Module)? self : self.singleton_class
 
@@ -22,26 +31,18 @@ module Multimethods
     partial_blocks[nuevo_metodo][tipos] = PartialBlock.new(tipos, &block)
 
     object.send(:define_method, nuevo_metodo) do |*args|
-      self.instance_exec(*args, &get_metodo_a_ejecutar(nuevo_metodo, *args))
+      self.instance_exec(*args, &get_metodo_a_ejecutar(nuevo_metodo, nil, *args))
+    end
+
+    base_class.send(:define_method, nuevo_metodo) do |tipos, *args|
+      self.instancia.instance_exec(*args, &get_metodo_a_ejecutar(nuevo_metodo, tipos, *args))
     end
   end
 
   def base
-    object_singleton = self.clone
-
-    multimethods.each do |multimetodo|
-      object_singleton.define_singleton_method(multimetodo) do |tipos, *args|
-        bloque = partial_blocks_total[multimetodo][tipos]
-
-        if bloque.nil?
-          raise NoMethodError, "#{multimetodo} no esta definido para los argumentos recibidos"
-        end
-
-        self.instance_exec(*args, &bloque)
-      end
-    end
-
-    object_singleton
+    @base ||= self.class.base_class.new()
+    @base.instancia = self
+    @base
   end
 
   def respond_to_multimethod?(multimetodo, args = nil)
@@ -52,12 +53,12 @@ module Multimethods
     super(metodo, include_all) and (args.nil? or respond_to_multimethod?(metodo, args))
   end
 
-#  private
+  private
 
   # Lookup del metodo. Elige que metodo (block) que se tiene que ejecutar
   # self aca es siempre una instancia, pero no se sabe si definio un multimetodo de instancia o de clase/modulo.
-  def get_metodo_a_ejecutar(method, *args)
-    candidatos = partial_blocks_total[method].values.find_all { |block| block.matches(*args) }
+  def get_metodo_a_ejecutar(method, tipos, *args)
+    candidatos = tipos ? [partial_blocks_total[method][tipos]] : partial_blocks_total[method].values.find_all { |block| block.matches(*args) }
 
     if candidatos.empty?
       raise NoMethodError, "#{method} no esta definido para los argumentos recibidos"
@@ -92,8 +93,3 @@ end
 class Object
   include Multimethods
 end
-
-
-
-
-
