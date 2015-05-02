@@ -449,6 +449,10 @@ end
       partial_def :m, [Object] do |o|
         "A>m"
       end
+
+      partial_def :g, [Integer] do |i|
+        i.to_s
+      end
     end
 
     class B < A
@@ -459,8 +463,13 @@ end
       partial_def :m, [Numeric] do |n|
         base.m([Object], n) + " => B>m_numeric"
       end
+
+      partial_def :q, [] do
+        base.g([Integer], 1) + " = 1" 
+      end 
     end
 
     expect(B.new.m(1)).to eq("A>m => B>m_numeric => B>m_integer(1)")
+    expect(B.new.q).to eq("1 = 1")
   end
 end

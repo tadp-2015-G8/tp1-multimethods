@@ -15,7 +15,7 @@ module Multimethods
     @partial_blocks ||= {}
   end
 
-  def multimethods(regular=true)
+  def multimethods(regular = true)
     regular ? partial_blocks_total.keys : partial_blocks.keys
   end
 
@@ -34,8 +34,8 @@ module Multimethods
       self.instance_exec(*args, &get_metodo_a_ejecutar(nuevo_metodo, nil, *args))
     end
 
-    base_class.send(:define_method, nuevo_metodo) do |tipos, *args|
-      self.instancia.instance_exec(*args, &get_metodo_a_ejecutar(nuevo_metodo, tipos, *args))
+    base_class.send(:define_method, nuevo_metodo) do |tipos_arg, *args|
+      self.instancia.instance_exec(*args, &get_metodo_a_ejecutar(nuevo_metodo, tipos_arg, *args))
     end
   end
 
@@ -63,7 +63,7 @@ module Multimethods
     if candidatos.empty?
       raise NoMethodError, "#{method} no esta definido para los argumentos recibidos"
     end
-    candidatos.min_by {|block| block.distancia(*args)}
+    candidatos.min_by { |block| block.distancia(*args) }
   end
 
   # Devuelve un hash con todos los multimetodos, tipos y bloques que debe entender por sus superclases y modulos para el metodo pedido.
@@ -71,11 +71,9 @@ module Multimethods
     partial_blocks_total = {}
 
     ancestros = [self] + self.class.ancestors
-    ancestros.reverse.each do |ancestro|
-      partial_blocks_total.keys.each do |multimetodo|
-        if ancestro.is_a? Module and ancestro.instance_methods(false).include? multimetodo and not ancestro.partial_blocks.keys.include? multimetodo
-          partial_blocks_total.delete(multimetodo)
-        end
+    ancestros.reverse_each do |ancestro|
+      partial_blocks_total.delete_if do |multimetodo, _|
+        ancestro.is_a? Module and ancestro.instance_methods(false).include? multimetodo and not ancestro.partial_blocks.keys.include? multimetodo
       end
 
       ancestro.partial_blocks.each do |multimetodo, hash_tipos|
