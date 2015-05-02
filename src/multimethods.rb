@@ -2,14 +2,6 @@ require_relative '../src/partial_block'
 
 module Multimethods
 
-  # devuelve una nueva clase clonada donde se van a definir los metodos base.
-  def base_class
-    clase = (self.is_a? Module)? self : self.class
-    @base_class ||= clase.clone
-    @base_class.send(:attr_accessor, :instancia)
-    @base_class
-  end
-
   # variable que guarda los blocks de cada multimethod.
   def partial_blocks
     @partial_blocks ||= {}
@@ -33,16 +25,10 @@ module Multimethods
     object.send(:define_method, nuevo_metodo) do |*args|
       self.instance_exec(*args, &get_metodo_a_ejecutar(nuevo_metodo, nil, *args))
     end
-
-    base_class.send(:define_method, nuevo_metodo) do |tipos_arg, *args|
-      self.instancia.instance_exec(*args, &get_metodo_a_ejecutar(nuevo_metodo, tipos_arg, *args))
-    end
   end
 
   def base
-    @base ||= self.class.base_class.new()
-    @base.instancia = self
-    @base
+    @base ||= MultimethodsBase.new(self)
   end
 
   def respond_to_multimethod?(multimetodo, args = nil)
@@ -85,6 +71,19 @@ module Multimethods
     end
 
     partial_blocks_total
+  end
+
+  class MultimethodsBase
+    attr_accessor :instancia
+
+    def initialize(instancia)
+      @instancia = instancia
+    end
+
+    def method_missing(sym, *args)
+      metodo = instancia.send(:get_metodo_a_ejecutar, sym, args[0], *args.drop(1))
+      instancia.instance_exec(*args.drop(1), &metodo)
+    end
   end
 end
 

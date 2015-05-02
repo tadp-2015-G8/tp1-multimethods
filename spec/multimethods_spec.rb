@@ -498,7 +498,13 @@ end
       base.g([Integer], 1) + " = 1" 
     end
 
+    object.partial_def :m2, [] do
+      base.m_no_existe([Integer], 1)
+    end
+
     expect(object.m(1)).to eq("A>m => B>m_numeric => B>m_integer(1)")
     expect(object.q).to eq("1 = 1")
+    expect{object.m2}.to raise_error(NoMethodError)
+
   end
 end
