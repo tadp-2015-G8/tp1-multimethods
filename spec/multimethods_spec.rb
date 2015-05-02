@@ -472,4 +472,33 @@ end
     expect(B.new.m(1)).to eq("A>m => B>m_numeric => B>m_integer(1)")
     expect(B.new.q).to eq("1 = 1")
   end
+
+  it 'Test de base con singleton class' do
+    class A
+      partial_def :m, [Object] do |o|
+        "A>m"
+      end
+
+      partial_def :g, [Integer] do |i|
+        i.to_s
+      end
+    end
+
+    object = A.new
+
+    object.partial_def :m, [Integer] do |i|
+      base.m([Numeric], i) + " => B>m_integer(#{i})"
+    end
+
+    object.partial_def :m, [Numeric] do |n|
+      base.m([Object], n) + " => B>m_numeric"
+    end
+
+    object.partial_def :q, [] do
+      base.g([Integer], 1) + " = 1" 
+    end
+
+    expect(object.m(1)).to eq("A>m => B>m_numeric => B>m_integer(1)")
+    expect(object.q).to eq("1 = 1")
+  end
 end
