@@ -507,4 +507,14 @@ end
     expect{object.m2}.to raise_error(NoMethodError)
 
   end
+
+  it 'distancia de un partial block sin parametros' do
+    class A
+      partial_def :metodo_sin_parametros, [] do
+      end
+    end
+
+    partial_block = A.partial_blocks[:metodo_sin_parametros].values[0]
+    expect(partial_block.distancia()).to eq(0)
+  end
 end

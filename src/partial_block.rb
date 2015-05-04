@@ -33,6 +33,11 @@ class PartialBlock < Proc
     if !self.matches(*args)
       raise ArgumentError, "Argumentos invalidos"
     end
+
+    if args.empty?
+      return 0
+    end
+
     args.zip(@tipos, 1..(args.size + 1)).map { |argumento, tipo, indice|
       argumento.class.ancestors.index(tipo) * indice
     }.inject(:+)
