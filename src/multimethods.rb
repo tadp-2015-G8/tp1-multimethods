@@ -39,6 +39,7 @@ module Multimethods
     super(method, include_all) and (args.nil? or respond_to_multimethod?(method, args))
   end
 
+  private
   # Lookup del metodo. Elige que metodo (block) que se tiene que ejecutar
   # self aca es siempre una instancia, pero no se sabe si definio un multimetodo de instancia o de clase/modulo.
   def get_metodo_a_ejecutar(method, *args)
@@ -83,15 +84,18 @@ module Multimethods
     end
 
     def get_metodo_a_ejecutar(method, tipos, *args)
-      if instancia.partial_blocks_total[method].nil?
+      partial_blocks = instancia.send(:partial_blocks_total)
+
+      if partial_blocks[method].nil?
         raise NoMethodError, "undefined method '#{method}' for #{instancia}"
       end
 
-      candidato = instancia.partial_blocks_total[method][tipos]
+      candidato = partial_blocks[method][tipos]
 
       if candidato.nil?
         raise TypeError, "undefined multimethod '#{method}' for types #{tipos} in #{instancia}"
       end
+
       if not candidato.matches(*args)
         raise ArgumentError, "undefined multimethod '#{method}' for arguments #{args} in #{instancia}"
       end
