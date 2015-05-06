@@ -532,4 +532,24 @@ end
     partial_block = A.partial_blocks[:metodo_sin_parametros].values[0]
     expect(partial_block.distancia()).to eq(0)
   end
+
+  it 'Base con tipos implicitos' do
+    class A
+      partial_def :m, [Object] do |o|
+        "A>m"
+      end
+    end
+
+    class B < A
+      partial_def :m, [Integer] do |i|
+        base(i) + " => B>m_integer(#{i})"
+      end
+
+      partial_def :m, [Numeric] do |n|
+        base(n) + " => B>m_numeric"
+      end
+    end
+
+    B.new.m(1)
+  end
 end

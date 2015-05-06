@@ -6,9 +6,10 @@ module Multimethods
   def partial_blocks
     @partial_blocks ||= {}
   end
-  
-  def base
+
+  def base(*args)
     @base ||= MultimethodsBase.new(self)
+    args.empty? ? @base : @base.llamada_implicita(args)
   end
 
   def multimethods(regular = true)
@@ -27,7 +28,10 @@ module Multimethods
     object.partial_blocks[method][tipos] = PartialBlock.new(tipos, &block)
 
     object.send(:define_method, method) do |*args|
-      self.instance_exec(*args, &get_metodo_a_ejecutar(method, *args))
+      partial_block = get_metodo_a_ejecutar(method, nil, *args)
+      self.base.method = method
+      self.base.distancia = partial_block.distancia(*args)
+      self.instance_exec(*args, &partial_block)
     end
   end
 
@@ -42,8 +46,8 @@ module Multimethods
   private
   # Lookup del metodo. Elige que metodo (block) que se tiene que ejecutar
   # self aca es siempre una instancia, pero no se sabe si definio un multimetodo de instancia o de clase/modulo.
-  def get_metodo_a_ejecutar(method, *args)
-    candidatos = partial_blocks_total[method].values.find_all { |block| block.matches(*args) }
+  def get_metodo_a_ejecutar(method, distancia,  *args)
+    candidatos = partial_blocks_total[method].values.find_all { |block| block.matches(*args) and block.distancia(*args) > distancia ||= -1}
 
     if candidatos.empty?
       raise ArgumentError, "undefined multimethod '#{method}' for arguments #{args} in #{self}"
@@ -73,7 +77,7 @@ module Multimethods
   end
 
   class MultimethodsBase
-    attr_accessor :instancia
+    attr_accessor :instancia, :method, :distancia
 
     def initialize(instancia)
       @instancia = instancia
@@ -101,6 +105,13 @@ module Multimethods
       end
 
       candidato
+    end
+
+    #pide el siguiente mejor metodo y actualiza la distancia minima para el siguiente a buscar.
+    def llamada_implicita(*args)
+      partial_block = instancia.send(:get_metodo_a_ejecutar, method, distancia, *args)
+      distancia = partial_block.distancia(*args)
+      instancia.instance_exec(*args, &partial_block)
     end
   end
 end
