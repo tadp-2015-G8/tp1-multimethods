@@ -19,11 +19,12 @@ describe 'test multimethods' do
 
     end
 
+    a = A.new
 
-    expect(A.new.concat('hello', 'world')).to eq("helloworld")
-    expect(A.new.concat('hello', 3)).to eq("hellohellohello")
-    expect(A.new.concat(['hello', ' world', '!'])).to eq("hello world!")
-    expect {A.new.concat('hello', 'world', '!')}.to raise_error(NoMethodError)
+    expect(a.concat('hello', 'world')).to eq("helloworld")
+    expect(a.concat('hello', 3)).to eq("hellohellohello")
+    expect(a.concat(['hello', ' world', '!'])).to eq("hello world!")
+    expect {a.concat('hello', 'world', '!')}.to raise_error(ArgumentError)
 
   end
 
@@ -128,7 +129,6 @@ describe 'test multimethods' do
         "#{@nombre} ataca con satelite a #{objetivo.nombre}"
       end
 
-
       def pisar(objetivo)
         "#{@nombre} pisa a #{objetivo.nombre}"
       end
@@ -150,7 +150,6 @@ describe 'test multimethods' do
       end
 
     end
-
 
     soldado = Soldado.new('Carlitos')
     tanque = Tanque.new('Tanque1')
@@ -216,12 +215,17 @@ end
     end
 
     tanque_modificado = Tanque.new('Tanque1')
+
+    # Primera forma de agregar metodos singleton.
     tanque_modificado.partial_def :tocar_bocina_a, [Soldado] do |soldado|
       "Honk honk! #{soldado.nombre}"
     end
 
-     tanque_modificado.partial_def :tocar_bocina_a, [Tanque] do |tanque|
-     "Hooooooonk!"
+    # Segunda forma de agregar metodos singleton.
+    class << tanque_modificado
+      partial_def :tocar_bocina_a, [Tanque] do |tanque|
+        "Hooooooonk!"
+      end
     end
 
     expect(tanque_modificado.tocar_bocina_a(Soldado.new("pepe"))).to eq("Honk honk! pepe")
@@ -397,13 +401,13 @@ end
 
     class A
       partial_def :m, [String] do |s|
-        p s
+        s.chr
       end
     end
 
     class B < A
       def m
-        p 'B'
+        'B'
       end
     end
 
@@ -415,8 +419,8 @@ end
 
     #La implementacion de A es apropiada, pero B la sobreescribe con un metodo normal.
     #Por lo tanto C termina su propia implementacion de m (corta la busqueda en B)
-    expect(A.new.m("Hola")).to eq("Hola")
-    expect{C.new.m("Hola")}.to raise_error(NoMethodError)
+    expect(A.new.m("Hola")).to eq("H")
+    expect{C.new.m("Hola")}.to raise_error(ArgumentError)
   end
 
   it 'Pisar metodos en la misma clase' do
@@ -474,7 +478,7 @@ end
   end
 
   it 'Test de base con singleton class' do
-    class A
+    class Q
       partial_def :m, [Object] do |o|
         "A>m"
       end
@@ -484,21 +488,48 @@ end
       end
     end
 
-    object = A.new
+    object = Q.new
 
-    object.partial_def :m, [Integer] do |i|
-      base.m([Numeric], i) + " => B>m_integer(#{i})"
-    end
+    class << object
+      partial_def :m, [Integer] do |i|
+        base.m([Numeric], i) + " => B>m_integer(#{i})"
+      end
 
-    object.partial_def :m, [Numeric] do |n|
-      base.m([Object], n) + " => B>m_numeric"
-    end
+      partial_def :m, [Numeric] do |n|
+        base.m([Object], n) + " => B>m_numeric"
+      end
 
-    object.partial_def :q, [] do
-      base.g([Integer], 1) + " = 1" 
+      partial_def :q, [] do
+        base.g([Integer], 1) + " = 1" 
+      end
+
+      partial_def :m2, [] do
+        base.m_no_existe([Integer], 1)
+      end
+
+      partial_def :m3, [] do
+        base.m([String], "abc")
+      end
+
+      partial_def :m4, [] do
+        base.m([Numeric], 1, 2)
+      end
     end
 
     expect(object.m(1)).to eq("A>m => B>m_numeric => B>m_integer(1)")
     expect(object.q).to eq("1 = 1")
+    expect{object.m2}.to raise_error(NoMethodError, "undefined method 'm_no_existe' for #{object}")
+    expect{object.m3}.to raise_error(TypeError, "undefined multimethod 'm' for types [String] in #{object}")
+    expect{object.m4}.to raise_error(ArgumentError, "undefined multimethod 'm' for arguments [1, 2] in #{object}")
+  end
+
+  it 'distancia de un partial block sin parametros' do
+    class A
+      partial_def :metodo_sin_parametros, [] do
+      end
+    end
+
+    partial_block = A.partial_blocks[:metodo_sin_parametros].values[0]
+    expect(partial_block.distancia()).to eq(0)
   end
 end
