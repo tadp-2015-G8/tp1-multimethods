@@ -9,7 +9,7 @@ module Multimethods
 
   def base(*args)
     @base ||= MultimethodsBase.new(self)
-    args.empty? ? @base : @base.llamada_implicita(args)
+    args.empty? ? @base : @base.llamada_implicita(*args)
   end
 
   def multimethods(regular = true)
@@ -110,7 +110,7 @@ module Multimethods
     #pide el siguiente mejor metodo y actualiza la distancia minima para el siguiente a buscar.
     def llamada_implicita(*args)
       partial_block = instancia.send(:get_metodo_a_ejecutar, method, distancia, *args)
-      distancia = partial_block.distancia(*args)
+      @distancia = partial_block.distancia(*args)
       instancia.instance_exec(*args, &partial_block)
     end
   end

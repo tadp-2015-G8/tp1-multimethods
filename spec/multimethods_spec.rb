@@ -550,6 +550,7 @@ end
       end
     end
 
-    B.new.m(1)
+    expect(B.new.m(1)).to eq("A>m => B>m_numeric => B>m_integer(1)")
+
   end
 end
