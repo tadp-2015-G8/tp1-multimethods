@@ -28,7 +28,7 @@ module Multimethods
     object.partial_blocks[method][tipos] = PartialBlock.new(tipos, &block)
 
     object.send(:define_method, method) do |*args|
-      partial_block = get_metodo_a_ejecutar(method, nil, *args)
+      partial_block = get_metodo_a_ejecutar(method, args)
       self.base.method = method
       self.base.distancia = partial_block.distancia(*args)
       self.instance_exec(*args, &partial_block)
@@ -46,12 +46,15 @@ module Multimethods
   private
   # Lookup del metodo. Elige que metodo (block) que se tiene que ejecutar
   # self aca es siempre una instancia, pero no se sabe si definio un multimetodo de instancia o de clase/modulo.
-  def get_metodo_a_ejecutar(method, distancia,  *args)
-    candidatos = partial_blocks_total[method].values.find_all { |block| block.matches(*args) and block.distancia(*args) > distancia ||= -1}
+  def get_metodo_a_ejecutar(method, args, distancia = -1)
+    candidatos = partial_blocks_total[method].values.find_all do |block|
+      block.matches(*args) and block.distancia(*args) > distancia
+    end
 
     if candidatos.empty?
       raise ArgumentError, "undefined multimethod '#{method}' for arguments #{args} in #{self}"
     end
+
     candidatos.min_by { |block| block.distancia(*args) }
   end
 
@@ -84,10 +87,10 @@ module Multimethods
     end
 
     def method_missing(method, tipos, *args)
-      instancia.instance_exec(*args, &get_metodo_a_ejecutar(method, tipos, *args))
+      instancia.instance_exec(*args, &get_metodo_a_ejecutar(method, tipos, args))
     end
 
-    def get_metodo_a_ejecutar(method, tipos, *args)
+    def get_metodo_a_ejecutar(method, tipos, args)
       partial_blocks = instancia.send(:partial_blocks_total)
 
       if partial_blocks[method].nil?
@@ -109,7 +112,7 @@ module Multimethods
 
     #pide el siguiente mejor metodo y actualiza la distancia minima para el siguiente a buscar.
     def llamada_implicita(*args)
-      partial_block = instancia.send(:get_metodo_a_ejecutar, method, distancia, *args)
+      partial_block = instancia.send(:get_metodo_a_ejecutar, method, args, distancia)
       @distancia = partial_block.distancia(*args)
       instancia.instance_exec(*args, &partial_block)
     end
